@@ -10,7 +10,7 @@ int main(int argc , char **argv)
 	struct sockaddr_in servaddr , cliaddr;
 
 	/*声明服务器监听套接字和客户端链接套接字*/
-	int listenfd , connfd;
+	int server_socket , connfd;
 	pid_t childpid;
 
 	/*声明缓冲区*/
@@ -18,8 +18,8 @@ int main(int argc , char **argv)
 
 	socklen_t clilen;
 
-	/*(1) 初始化监听套接字listenfd*/
-	if((listenfd = socket(AF_INET , SOCK_STREAM , 0)) < 0)
+	/*(1) 初始化监听套接字server_socket*/
+	if((server_socket = socket(AF_INET , SOCK_STREAM , 0)) < 0)
 	{
 		perror("socket error");
 		exit(1);
@@ -30,17 +30,17 @@ int main(int argc , char **argv)
 
 	servaddr.sin_family = AF_INET;					//IPV4
 	servaddr.sin_addr.s_addr = inet_addr("127.0.0.1"); 	//表明可接受本机IP地址
-	servaddr.sin_port = htons(1234);
+	servaddr.sin_port = htons(PORT);
 
 	/*(3) 绑定套接字和端口*/
-	if(bind(listenfd , (struct sockaddr*)&servaddr , sizeof(servaddr)) < 0)
+	if(bind(server_socket , (struct sockaddr*)&servaddr , sizeof(servaddr)) < 0)
 	{
 		perror("bind error");
 		exit(1);
 	}//if
 
 	/*(4) 监听客户请求*/
-	if(listen(listenfd , LISTENQ) < 0)
+	if(listen(server_socket , LISTENQ) < 0)
 	{
 		perror("listen error");
 		exit(1);
@@ -50,7 +50,7 @@ int main(int argc , char **argv)
 	for( ; ; )
 	{
 		clilen = sizeof(cliaddr);
-		if((connfd = accept(listenfd , (struct sockaddr *)&cliaddr , &clilen)) < 0 )
+		if((connfd = accept(server_socket , (struct sockaddr *)&cliaddr , &clilen)) < 0 )
 		{
 			perror("accept error");
 			exit(1);
@@ -59,7 +59,7 @@ int main(int argc , char **argv)
 		//新建子进程单独处理链接
 		if((childpid = fork()) == 0) 
 		{
-			close(listenfd);
+			close(server_socket);
 			//str_echo
 			ssize_t n;
 			char buff[MAX_LINE];
@@ -73,5 +73,5 @@ int main(int argc , char **argv)
 	}//for
 	
 	/*(6) 关闭监听套接字*/
-	close(listenfd);
+	close(server_socket);
 }
